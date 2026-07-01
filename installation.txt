@@ -1,0 +1,62 @@
+sudo apt install cmake
+
+# Create a folder for the project
+mkdir opencv_build && cd opencv_build
+# Clone the main repo
+git clone https://github.com/opencv/opencv.git
+# Clone the extra modules (optional but recommended)
+git clone https://github.com/opencv/opencv_contrib.git
+
+--
+
+cd opencv
+mkdir build && cd build
+cmake -D CMAKE_BUILD_TYPE=Release \
+      -D CMAKE_INSTALL_PREFIX=/usr/local \
+      -D OPENCV_EXTRA_MODULES_PATH=../../opencv_contrib/modules \
+      -D WITH_TBB=ON \
+      -D WITH_V4L=ON \
+      -D WITH_QT=OFF \
+      -D WITH_OPENGL=ON ..
+
+--
+
+# Use all your CPU cores to speed it up
+make -j$(nproc)
+sudo make install
+
+--
+
+need to modify the path of set(OpenCV_DIR "/usr/local/lib/cmake/opencv4/") to make sure it matches the location of OPENCVCONFIG
+
+repeat the above for aruco
+
+sudo apt install v4l-utils
+sudo apt install ffmpeg
+wget -c https://github.com/bluenviron/mediamtx/releases/download/v1.8.1/mediamtx_v1.8.1_linux_armv7.tar.gz -O - | sudo tar -xz
+chmod +x /home/pi/myscript.sh
+sudo nano /etc/systemd/system/myscript.service
+
+--
+[Unit]
+Description=My Startup Script
+After=network-online.target
+
+[Service]
+ExecStart=/home/beta/startrtsp.sh
+WorkingDirectory=/home/beta/
+StandardOutput=inherit
+StandardError=inherit
+Restart=always
+User=beta
+
+[Install]
+WantedBy=multi-user.target
+--
+
+sudo systemctl daemon-reload
+sudo systemctl enable rtsp.service
+sudo systemctl start rtsp.service
+
+systemctl status rtsp.service
+journalctl -u rtsp.service

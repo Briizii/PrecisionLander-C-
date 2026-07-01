@@ -1,0 +1,29 @@
+# Local assistant memory (never commit)
+/.memory/
+
+# CMake and Ninja build output
+/build/
+/cmake-build-*/
+/CMakeFiles/
+/CMakeCache.txt
+/cmake_install.cmake
+/build.ninja
+/.ninja_deps
+/.ninja_log
+/compile_commands.json
+
+# Runtime-generated files
+/pose_log.csv
+
+# CLion and JetBrains IDE state
+/.idea/
+*.iml
+
+# Python caches
+__pycache__/
+*.py[cod]
+
+# macOS and extracted archive metadata
+.DS_Store
+._*
+__MACOSX/

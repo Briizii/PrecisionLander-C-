@@ -1,0 +1,150 @@
+#include <opencv2/opencv.hpp>
+#include <iostream>
+#include <aruco/aruco.h>
+#include <aruco/fractaldetector.h>
+#include <aruco/marker.h>
+#include <filesystem>
+
+//start of main function
+int main() {
+    // announce program start
+    std::cout << "Starting ArUco Detection!" << std::endl;
+
+    // data init
+    const std::string filename = "camera_result.xml";
+    int frameId = 0;
+    const float MarkerSize = 0.01;
+    char key = 0;
+    int waitTime=10;
+    const float s = MarkerSize * 0.5f;
+    char buf[128];
+
+    // define the world points (obj_pts)
+    const std::vector<cv::Point3f> obj_pts = {
+        {-s, +s, 0.0f},
+        {+s, +s, 0.0f},
+        {+s, -s, 0.0f},
+        {-s, -s, 0.0f},
+    };
+
+    // aruco init
+    aruco::FractalDetector FDetector;
+    FDetector.setConfiguration("FRACTAL_3L_6");
+    aruco::CameraParameters CamParam;
+    cv::Mat rvec, tvec;
+    cv::Mat camMatrix;
+    cv::Mat distCoeffs;
+
+    // --------------------------- camera init -----------------------------
+    cv::Mat frame;
+    // Check camera files exist and are valid.
+    if (std::filesystem::exists(filename)) {
+        std::cout << "Camera calibration file exists!" << std::endl;
+        CamParam.readFromXMLFile("camera_result.xml");
+        if (CamParam.CameraMatrix.empty() || CamParam.Distorsion.empty()) {
+            std::cerr << "Error: Camera matrices are empty. Check camera_result.xml file content." << std::endl
+                      << "Use the camera calibration script in the included Aruco library to generate." << std::endl;
+            return -1;
+        }
+        std::cout << CamParam.CameraMatrix << ", " << CamParam.Distorsion << std::endl;
+    } else {
+        std::cerr << "Camera calibration file does not exist in project directory" << std::endl;
+        return -1;
+    }
+    // Open input and read image
+    cv::VideoCapture camera;
+    camera.open(1); // 1 for laptop, 0 for phone
+    if (camera.isOpened()) {
+        std::cout << std::endl
+                  << "Camera Open!" << std::endl
+                  << "Press 'ETC' to cancel" << std::endl;
+        camera >> frame; //first frame will be lost if main loop is entered.
+    } else {
+        std::cerr << "Could not open input" << std::endl;
+        return -1;
+    }
+
+    if (CamParam.isValid())
+    {
+        CamParam.resize(frame.size());
+        FDetector.setParams(CamParam, MarkerSize);
+        camMatrix = CamParam.CameraMatrix;
+        distCoeffs = CamParam.Distorsion;
+    }
+
+    // --------------------------------main loop---------------------------------------
+    while (camera.isOpened() && key != 27) {
+        //std::cout << "\r\rFrameId: " << frameId++ << std::flush;
+        camera >> frame; // grab and retrieve, same as read (>>) function
+        if (!camera.read(frame) || frame.empty()) { // check
+            std::cerr << "Invalid frame received\n";
+            continue;
+        }
+
+        // Detect markers and return to serial for testing
+        if (FDetector.detect(frame)) {
+            auto markers = FDetector.getMarkers();
+            if (markers.empty()) {
+                std::cerr << "Markers are empty" << std::endl;
+            } else {
+/************************************************************
+ * REMOVE BEFORE FLIGHT
+ * Debug / development-only code below
+ ************************************************************/
+                FDetector.drawMarkers(frame); // draws the corners (disable in flight)
+
+                // std::cout << markers[0] << std::endl;
+/************************************************************
+* REMOVE BEFORE FLIGHT END
+************************************************************/
+                std::vector<cv::Point2f> img_pts = markers[0];
+                bool ok = cv::solvePnP(
+                    obj_pts,
+                    img_pts,
+                    camMatrix,
+                    distCoeffs,
+                    rvec,
+                    tvec,
+                    false,
+                    cv::SOLVEPNP_IPPE_SQUARE
+                );
+                if (ok) {
+                    double tx = tvec.at<double>(0,0);
+                    double ty = tvec.at<double>(1,0);
+                    double tz = tvec.at<double>(2,0);
+                    double distance = sqrt(pow(tx,2) + pow(ty, 2) + pow(tz,2));
+                    std::snprintf(buf, sizeof(buf), "\r x = %8.3fm | y= %8.3fm | z = %8.3fm | Distance = %8.3fm   ", tx, ty, tz, distance);
+                    std::cout << buf << std::flush;
+                    // cv::drawFrameAxes(frame, camMatrix, distCoeffs, rvec, tvec, 0.05f);
+                } else {
+                    FDetector.draw2d(frame); // draws the points (disable in flight
+                }
+                ok=false;
+            }
+        } else {
+                //std::cerr << "No ArUco in FOV" << std::endl;
+                // do nothing atm
+        } // end of loop while a marker is detected
+
+
+        // return corners for each id
+
+        // if ids is not None and desired tag is in ids.flatten()
+            // return the corners of the desired marker
+            // create obj_points
+            // create img_points by reshaping corners
+            // return success, tvec and rvec
+
+            // if success
+                // assign x, y, z and change posvalid to 1
+            // if pos is valid
+                // print the translation in serial
+
+        // print the image
+        cv::imshow("in", frame);
+        key = cv::waitKey(waitTime);  // wait for key to be pressed (essential for opencv to function)
+        if (key == 's')
+            waitTime = waitTime == 0 ? 10 : 0;
+
+    } // ------------------------------------end of main loop------------------------
+} // end of main function
