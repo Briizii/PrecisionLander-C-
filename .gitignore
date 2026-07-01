@@ -27,3 +27,8 @@ __pycache__/
 .DS_Store
 ._*
 __MACOSX/
+cmake-build-*/
+.idea/
+*.exe
+*.o
+*.obj
