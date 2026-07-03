@@ -1,5 +1,19 @@
-# Local assistant memory (never commit)
+# Local-only configuration and assistant state
 /.memory/
+.env
+.env.*
+!.env.example
+!.env.sample
+*.local
+
+# Credentials and private keys
+*.key
+*.pem
+*.p12
+*.pfx
+*.keystore
+credentials.json
+secrets.*
 
 # CMake and Ninja build output
 /build/
@@ -11,24 +25,30 @@
 /.ninja_deps
 /.ninja_log
 /compile_commands.json
+/CMakeUserPresets.json
 
 # Runtime-generated files
 /pose_log.csv
+*.log
 
-# CLion and JetBrains IDE state
+# CLion, VS Code, and JetBrains IDE state
 /.idea/
+/.vscode/
 *.iml
 
-# Python caches
+# Python caches and virtual environments
 __pycache__/
 *.py[cod]
+.venv/
+venv/
+env/
 
 # macOS and extracted archive metadata
 .DS_Store
 ._*
 __MACOSX/
-cmake-build-*/
-.idea/
+
+# Compiled objects and executables
 *.exe
 *.o
 *.obj
