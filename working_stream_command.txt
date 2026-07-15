@@ -1,0 +1,7 @@
+Working OV9281 TCP stream command:
+
+gst-launch-1.0 -v libcamerasrc ! video/x-raw,width=1280,height=800,framerate=30/1 ! videoconvert ! x264enc tune=zerolatency speed-preset=ultrafast bitrate=1500 key-int-max=15 ! h264parse config-interval=1 ! mpegtsmux ! tcpserversink host=0.0.0.0 port=8554
+
+View from laptop using VLC:
+
+tcp://<raspberry-pi-ip>:8554

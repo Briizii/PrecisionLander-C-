@@ -109,7 +109,16 @@ int main() {
         return -1;
     }
 
-    cv::VideoCapture camera(0); // should be 0 if says no camera found
+    // Using Gstreamer for OV9281 Camera
+    std::string pipeline =
+    "libcamerasrc ! "
+    "video/x-raw,width=1280,height=800,framerate=30/1 ! "
+    "videoconvert ! "
+    "video/x-raw,format=BGR ! "
+    "appsink drop=true sync=false";
+
+    cv::VideoCapture camera(pipeline, cv::CAP_GSTREAMER);
+
     if (!camera.isOpened()) {
         std::cerr << "\033[31mCould not open camera input\033[0m" << std::endl;
         return -1;
@@ -122,6 +131,32 @@ int main() {
     if (frame.empty()) {
         std::cerr << "\033[31mFailed to capture first frame\033[0m" << std::endl;
         return -1;
+    }
+
+    std::string streamPipeline =
+	"appsrc ! "
+        "videoconvert ! "
+        "video/x-raw,format=I420 ! "
+        "x264enc tune=zerolatency speed-preset=ultrafast bitrate=1500 key-int-max=15 bframes=0 ! "
+        "h264parse config-interval=1 ! "
+        "mpegtsmux ! "
+        "tcpserversink host=0.0.0.0 port=8554 sync=false";
+
+    cv::VideoWriter streamWriter(
+	streamPipeline,
+        cv::CAP_GSTREAMER,
+        0,
+        30,
+        frame.size(),
+        true
+    );
+
+    if (!streamWriter.isOpened()) {
+	std::cerr << "\033[31mCould not open debug stream output\033[0m" << std::endl;
+    }
+
+    else {
+	std::cerr << "\033[32mDebug stream available at tcp://<raspberry-pi-ip>:8554\033[0m" << std::endl;
     }
 
     camParam.resize(frame.size());
@@ -184,11 +219,21 @@ int main() {
 
         if (waitTime != 0 || frameCounter % 30 == 0) {
             detector.drawMarkers(frame);
-            cv::imshow("in", frame);
-        }
-        
-        const int key = cv::waitKey(waitTime == 0 ? 1 : waitTime);
 
+//      Headless mode ( Uncomment if have GUI )
+//      cv::imshow("in", frame);
+        }
+
+	if (streamWriter.isOpened()) {
+	    streamWriter.write(frame);
+	}
+
+//	No keyboard input
+//      const int key = cv::waitKey(waitTime == 0 ? 1 : waitTime);
+
+//	Called key value because it checked the waitTime to avoid error
+	const int key = -1;
+	
         if (key == 27) { // ESC
             break;
         } else if (key == 's') { // essential to allow opencv to render the GUI
