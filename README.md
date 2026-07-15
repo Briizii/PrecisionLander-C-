@@ -1,4 +1,4 @@
-[README_PrecisionLander(1).md](https://github.com/user-attachments/files/30036960/README_PrecisionLander.1.md)
+[README_PrecisionLander(1).md](https://github.com/user-attachments/files/30040094/README_PrecisionLander.1.md)
 # PrecisionLander
 
 PrecisionLander is a Raspberry Pi + Pixhawk precision-landing system that detects a visual landing marker and sends MAVLink `LANDING_TARGET` messages to ArduPilot. The system uses a C++ multi-stage fractal/ArUco marker estimator on the Raspberry Pi and a Python MAVLink publisher that forwards the estimated target position to the flight controller.
